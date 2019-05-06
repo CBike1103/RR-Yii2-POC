@@ -1,0 +1,6 @@
+{
+    "require": {
+        "spiral/goridge": "^2.1",
+        "spiral/roadrunner": "^1.3"
+    }
+}
