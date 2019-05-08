@@ -50,10 +50,8 @@ public function clean($limit)
 * 当开启yii2 debug时，相比fpm，控制台脚本性能下降非常显著。表现为 spl_autoload 函数耗时严重。
 * 控制台脚本中的`date_default_timezone_set()`函数需要耗时3毫秒左右。
 
-## echo问题 - TODO
+## 新项目的问题 - TODO
 * 有的同学写的代码是直接echo的，没有用Yii2的Response Class, 因此也就不能直接被yii2-psr7-bridge支持。需要我们在调用handler的前后加上`ob_start()`和`ob_get_clean()`方法。这对速度的影响有待进一步验证。
-
-## response问题
 * 有的同学写了通用的response返回方法如下
 ```php
 /**
@@ -100,9 +98,10 @@ public static function _end($code, $msg='', $data=array(), $header = 1)
         "msg"=>$msg,
         "data"=>$data,
     ));
-    return;
+    return $response;
 }
 ```
 * php中自定义的header似乎失效了。
+* worker只能返回一次结果，然后似乎就block住了？
 
 ## 运行一个复杂项目并验证 - TODO
