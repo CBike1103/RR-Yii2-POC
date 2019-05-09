@@ -39,9 +39,11 @@ public function clean($limit)
 * 长时运行的脚本数据库链接断线重连问题 https://www.yiichina.com/topic/7296?sort=desc
 * redis问题类似mysql
 
-## http 相关
+## http 相关 - TODO
 * json数据的判断和解析需要自己实现
 * 跳转问题
+* php中的$_GET, $_REQUEST 等变量没有赋值。需要我们手动赋值。
+* OPTIONS方法返回worker error, 原因需要进一步查明。
 
 ## 文件流 - TODO
 * 发送文件流的支持有问题，这个需求我们似乎没有？
@@ -101,7 +103,8 @@ public static function _end($code, $msg='', $data=array(), $header = 1)
     return $response;
 }
 ```
-* php中自定义的header似乎失效了。
-* worker只能返回一次结果，然后似乎就block住了？
+*  worker只能返回一次结果，然后似乎就block住了？
+
+原因是 调用 clean() 的时候，没有设定Memory Limit. 已经加上了一个20mb的默认值。
 
 ## 运行一个复杂项目并验证 - TODO
