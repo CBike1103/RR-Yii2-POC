@@ -49,8 +49,6 @@ $application = (new \yii\Psr7\web\Application($config));
 
 // Handle each request in a loop
 while ($request = $psr7->acceptRequest()) {
-    // start profiling
-    // xhprof_enable();
     try {
         $response = $application->handle($request);
         $psr7->respond($response);
@@ -65,8 +63,26 @@ while ($request = $psr7->acceptRequest()) {
     }
 }
 ```
+其中`/config/roadrunner.php`是roadrunner专用的配置文件。根据这篇[文档](https://github.com/yoozoo/yii2-psr7-bridge/blob/master/README.md)做了专门的设置。
+需要引入依赖
+```
+composer require sqiral/roadrunner
+composer require sqiral/goridge
+composer require charlesportwoodii/yii2-psr7-bridge dev-master
+```
 
+wrk测试
+```
+wrk -t 4 -c 100 http://localhost:XXXX
+```
 
+### 3. 利用xhprof
+
+`xhprof`是一个轻量级的分层性能测量分析器。 在数据收集阶段，它跟踪调用次数与测量数据，展示程序动态调用的弧线图。 它在报告、后期处理阶段计算了独占的性能度量，例如运行经过的时间、CPU 计算时间和内存开销。 函数性能报告可以由调用者和被调用者终止。 在数据搜集阶段 XHProf 通过调用图的循环来检测递归函数，通过赋予唯一的深度名称来避免递归调用的循环。
+
+从 https://pecl.php.net/package/xhprof 下载。
+
+修改 php 项目中的yii2-psr7-bridge脚本如下。
 
 ```php
 <?php
@@ -87,19 +103,19 @@ $psr7 = new \Spiral\RoadRunner\PSR7Client(new \Spiral\RoadRunner\Worker($relay))
 $config = require __DIR__ . '/config/roadrunner.php';
 $application = (new \yii\Psr7\web\Application($config));
 
-// // xhprof
-// $XHPROF_ROOT = '/home/chenfang/Codes/general/xhprof';
-// include_once $XHPROF_ROOT . "/xhprof_lib/utils/xhprof_lib.php";
-// include_once $XHPROF_ROOT . "/xhprof_lib/utils/xhprof_runs.php";
-// // save raw data for this profiler run using default
-// // implementation of iXHProfRuns.
-// $xhprof_runs = new XHProfRuns_Default();
+// xhprof
+$XHPROF_ROOT = '/home/chenfang/Codes/general/xhprof';
+include_once $XHPROF_ROOT . "/xhprof_lib/utils/xhprof_lib.php";
+include_once $XHPROF_ROOT . "/xhprof_lib/utils/xhprof_runs.php";
+// save raw data for this profiler run using default
+// implementation of iXHProfRuns.
+$xhprof_runs = new XHProfRuns_Default();
 
 
 // Handle each request in a loop
 while ($request = $psr7->acceptRequest()) {
     // start profiling
-    // xhprof_enable();
+    xhprof_enable();
     try {
         $response = $application->handle($request);
         $psr7->respond($response);
@@ -109,17 +125,14 @@ while ($request = $psr7->acceptRequest()) {
         $psr7->getWorker()->stop();
     }
 
-    // Workers will steadily grow in memory with each request until PHP memory_limit is reached, resulting in a worker crash.
-    // With RoadRunner, you can tell the worker to shutdown if it approaches 10% of the maximum memory limit, allowing you to achieve better uptime.
-
-    // unset($application);
-    // gc_collect_cycles();
     if ($application->clean(20)) {
         $psr7->getWorker()->stop();
         return;
     }
 
-    // $xhprof_data = xhprof_disable();
-    // $run_id = $xhprof_runs->save_run($xhprof_data, "xhprof_support_roadrunner");
+    $xhprof_data = xhprof_disable();
+    $run_id = $xhprof_runs->save_run($xhprof_data, "xhprof_support_roadrunner");
 }
 ```
+访问网页分析问题。
+
